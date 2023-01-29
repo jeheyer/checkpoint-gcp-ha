@@ -6,10 +6,10 @@ variable "project_id" {
 variable "region" {
   description = "Default region name to deploy in"
   type        = string
-  default     = "us-central1"
 }
 variable "name" {
-  type = string
+  type    = string
+  default = null
 }
 variable "description" {
   type    = string

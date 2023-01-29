@@ -1,6 +1,7 @@
 locals {
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
+  cluster_name          = coalesce(var.name, "ckpt-${var.region}")
 }
 
 # If Admin password not provied, create random 16 character one
@@ -18,9 +19,7 @@ resource "random_string" "sic_key" {
 }
 
 locals {
-  region                = coalesce(var.region, "us-central1")
   subnet_prefix         = "projects/${var.project_id}/regions/${var.region}/subnetworks"
-  cluster_name          = coalesce(var.name, "ckpt-${var.region}")
   cluster_address_names = coalesce(var.address_names, ["primary-cluster-address", "secondary-cluster-address"])
   cluster_member_names  = coalesce(var.member_names, ["member-a", "member-b"])
   cluster_members = { for k, v in local.cluster_member_names : v =>
@@ -39,7 +38,7 @@ resource "google_compute_address" "cluster_external_ips" {
   count        = length(local.cluster_address_names)
   project      = var.project_id
   name         = "${local.cluster_name}-${local.cluster_address_names[count.index]}"
-  region       = local.region
+  region       = var.region
   address_type = "EXTERNAL"
 }
 
@@ -48,7 +47,7 @@ resource "google_compute_address" "member_external_ips" {
   for_each     = local.create_member_external_ips ? local.cluster_members : {}
   project      = var.project_id
   name         = each.value.member_address_name
-  region       = local.region
+  region       = var.region
   address_type = "EXTERNAL"
 }
 
@@ -72,7 +71,7 @@ locals {
   admin_password        = local.generate_admin_password ? random_string.admin_password[0].result : var.admin_password
   sic_key               = local.generate_sic_key ? random_string.sic_key[0].result : var.sic_key
   allow_upload_download = coalesce(var.allow_upload_download, false)
-  enable_monitoring = coalesce(var.enable_monitoring, false)
+  enable_monitoring     = coalesce(var.enable_monitoring, false)
 }
 
 # Create Compute Engine Instances
@@ -81,7 +80,7 @@ resource "google_compute_instance" "cluster_members" {
   project                   = var.project_id
   name                      = each.value.name
   description               = coalesce(var.description, "CloudGuard Highly Available Security Cluster")
-  zone                      = "${local.region}-${each.value.zone}"
+  zone                      = "${var.region}-${each.value.zone}"
   machine_type              = coalesce(var.machine_type, "n1-standard-4")
   tags                      = coalesce(var.network_tags, ["checkpoint-gateway"])
   can_ip_forward            = true
@@ -137,7 +136,7 @@ resource "google_compute_instance" "cluster_members" {
   }
   metadata_startup_script = templatefile("${path.module}/${local.startup_script_file}", {
     // script's arguments
-    generatePassword               = "True"  # Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
+    generatePassword               = "True" # Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
     config_url                     = "https://runtimeconfig.googleapis.com/v1beta1/projects/${var.project_id}/configs/${local.cluster_name}-config"
     config_path                    = "projects/${var.project_id}/configs/${local.cluster_name}-config"
     sicKey                         = local.sic_key

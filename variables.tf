@@ -71,10 +71,6 @@ variable "software_version" {
   type    = string
   default = null
 }
-variable "image" {
-  type    = string
-  default = null
-}
 variable "ssh_key" {
   type    = string
   default = null
@@ -130,3 +126,24 @@ variable "configured" {
   type    = bool
   default = false
 }
+variable "domain_name" {
+  type    = string
+  default = null
+}
+variable "proxy_host" {
+  type    = string
+  default = null
+}
+variable "proxy_port" {
+  type    = number
+  default = 8080
+}
+variable "mgmt_routes" {
+  type    = list(string)
+  default = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+}
+variable "internal_routes" {
+  type    = list(string)
+  default = []
+}
+

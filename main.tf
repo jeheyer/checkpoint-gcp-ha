@@ -1,7 +1,7 @@
 locals {
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
-  cluster_name          = coalesce(var.name, "ckpt-${var.region}")
+  cluster_name            = coalesce(var.name, "ckpt-${var.region}")
 }
 
 # If Admin password not provied, create random 16 character one
@@ -85,6 +85,7 @@ resource "google_compute_instance" "cluster_members" {
   tags                      = coalesce(var.network_tags, ["checkpoint-gateway"])
   can_ip_forward            = true
   allow_stopping_for_update = true
+  resource_policies         = []
   boot_disk {
     auto_delete = coalesce(var.disk_auto_delete, true)
     initialize_params {

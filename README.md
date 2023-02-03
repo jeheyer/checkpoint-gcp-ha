@@ -35,12 +35,12 @@
 | sic\_key | Secure Internal Communication passkey | `string` | n/a |
 | create\_cluster\_external\_ips | Create External IPs for Cluster | `bool` | true |
 | create\_member\_external\_ips | Create External IPs for Mgmt Interfaces | `bool` | true |
-| allow_upload_download | Allow Software updates via Web | `bool` | true |
-| enable\_monitoring | Activate StackDriver Monitoring | `bool` | true |
+| allow_upload_download | Allow Software updates via Web | `bool` | false |
+| enable\_monitoring | Activate StackDriver Monitoring | `bool` | false |
 | network\_tags | Network Tags to apply to gateways | `list(string)` | ["checkpoint-gateway"] |
 | disk\_type | Disk type for gateways | `string` | "pd-ssd" |
 | disk\_size | Disk size for gateways (in GB) | `number` | 100 |
-| disk\_auto\_delete | Delete Disk  | `bool` | true |
+| disk\_auto\_delete | Auto delete disk when VM is deleted | `bool` | true |
 | description | Description for the cluster members | `string` | "CheckPoint CloudGuard IaaS Gateway" |
 
 ### Notes

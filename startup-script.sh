@@ -42,7 +42,7 @@ function set_internal_static_routes() {
 
 function create_dynamic_objects() {
     local is_managment="$1"
-    local interfaces='eth0 eth1'
+    local interfaces='eth0 eth1 eth2'
     for interface in $interfaces; do
         if $is_managment; then
             dynamic_objects -n "LocalGateway"
@@ -51,10 +51,12 @@ function create_dynamic_objects() {
         else
             local addr="$(ip addr show dev $interface | awk "/inet/{print \$2; exit}" | cut -d / -f 1)"
             if [ "$interface" == "eth0" ]; then
-                dynamic_objects -n "LocalGateway" -r "$addr" "$addr" -a
                 dynamic_objects -n "LocalGatewayExternal" -r "$addr" "$addr" -a
+            elif [ "$interface" == "eth1" ]; then
+                dynamic_objects -n "LocalGateway" -r "$addr" "$addr" -a
             else
                 dynamic_objects -n "LocalGatewayInternal" -r "$addr" "$addr" -a
+                dynamic_objects -n "LocalGatewayBackend" -r "$addr" "$addr" -a
             fi
         fi
     done

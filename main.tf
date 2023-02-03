@@ -80,6 +80,8 @@ locals {
   sic_key               = local.generate_sic_key ? random_string.sic_key[0].result : var.sic_key
   allow_upload_download = coalesce(var.allow_upload_download, false)
   enable_monitoring     = coalesce(var.enable_monitoring, false)
+  admin_shell           = coalesce(var.admin_shell, "/bin/bash")
+  install_type          = coalesce(var.install_type, "Cluster")
   subnet_prefix         = "projects/${var.project_id}/regions/${var.region}/subnetworks"
 }
 
@@ -146,34 +148,34 @@ resource "google_compute_instance" "cluster_members" {
   }
   metadata_startup_script = templatefile("${path.module}/${local.startup_script_file}", {
     // script's arguments
-    generatePassword               = 0 #"True" Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
-    config_url                     = "https://runtimeconfig.googleapis.com/v1beta1/projects/${var.project_id}/configs/${local.cluster_name}-config"
-    config_path                    = "projects/${var.project_id}/configs/${local.cluster_name}-config"
-    sicKey                         = local.sic_key
-    allowUploadDownload            = 1 #local.allow_upload_download ? "True" : "False"
-    templateName                   = "cluster_tf"
-    templateVersion                = local.template_version
-    templateType                   = "terraform"
-    mgmtNIC                        = "Private IP (eth1)"
-    hasInternet                    = 1 #"true" "False"
-    enableMonitoring               = 1 #local.enable_monitoring ? "True" : "False"
-    shell                          = coalesce(var.admin_shell, "/bin/bash")
-    installationType               = "Cluster" #coalesce(var.install_type, "Cluster")
-    installSecurityManagement      = 0
-    computed_sic_key               = ""
+    generatePassword    = "true" #0 #"True" Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
+    config_url          = "https://runtimeconfig.googleapis.com/v1beta1/projects/${var.project_id}/configs/${local.cluster_name}-config"
+    config_path         = "projects/${var.project_id}/configs/${local.cluster_name}-config"
+    sicKey              = local.sic_key
+    allowUploadDownload = local.allow_upload_download
+    templateName        = "cluster_tf"
+    templateVersion     = local.template_version
+    templateType        = "terraform"
+    mgmtNIC             = "Private IP (eth1)"
+    hasInternet         = "true"
+    enableMonitoring    = local.enable_monitoring
+    shell               = local.admin_shell
+    installationType    = local.install_type
+    #installSecurityManagement      = 0
+    computed_sic_key               = local.sic_key
     managementGUIClientNetwork     = coalesce(var.allowed_gui_clients, "0.0.0.0/0")
     primary_cluster_address_name   = "${local.cluster_name}-${local.cluster_address_names[0]}"
     secondary_cluster_address_name = "${local.cluster_name}-${local.cluster_address_names[1]}"
     managementNetwork              = coalesce(var.sic_address, "192.0.2.132/32") # This is designed to create a static route to the mgmt server via eth1
+    expert_password = var.expert_password
 
     /* TODO
     domain_name = 
     admin_password = 
-    expert_password = 
     proxy_host =
     proxy_port = 8080
     mgmt_routes = 
-    internal_routes =  
+    internal_routes =  coalesce(var.internal_routes, "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16")
     */
   })
 }

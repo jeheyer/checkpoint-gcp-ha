@@ -4,6 +4,7 @@ output "license_type" { value = local.license_type }
 output "software_version" { value = local.software_version }
 output "sic_key" { value = local.sic_key }
 output "admin_password" { value = local.admin_password }
+output "admin_shell" { value = local.admin_shell }
 output "members" {
   value = { for k, v in local.cluster_members : k =>
     {

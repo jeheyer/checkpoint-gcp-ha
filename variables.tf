@@ -51,6 +51,10 @@ variable "admin_password" {
   type    = string
   default = null
 }
+variable "expert_password" {
+  type    = string
+  default = null
+}
 variable "sic_key" {
   type    = string
   default = null

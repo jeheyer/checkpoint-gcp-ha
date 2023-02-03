@@ -1,11 +1,10 @@
-# for CheckPoint HA Cluster on Google Cloud Platform
+# CheckPoint HA Cluster on Google Cloud Platform
 
 ## Resources Created
 
 - [google_compute_instance](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance)
 - [google_compute_address](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_address)
-- [random_string](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string)
-
+- [random_string](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) - For generated password and SIC keys
 
 ## Inputs 
 
@@ -51,8 +50,13 @@
 
 | Name | Description | Type |
 |------|-------------|------|
-| cluster | Information about the Cluster | `map` |
-| member | Information about each Cluster Member | `map` |
+| cluster\_name | Name of the Cluster | `string` |
+| cluster\_address | Primary Cluster Address of the Cluster | `string` |
+| license\_type | License type that was deployed | `string` |
+| software\_version | Software version that was deployed | `string` |
+| admin\_password | Admin password for the gateways | `string` |
+| sic\_key | SIC key for the gateways | `string` |
+| members | Information about each Cluster Member (gateway) | `map` |
 
 ## Sample Inputs
 

@@ -1,17 +1,17 @@
 locals {
+  cluster_name            = coalesce(var.name, "ckpt-${var.region}")
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
-  cluster_name            = coalesce(var.name, "ckpt-${var.region}")
 }
 
-# If Admin password not provied, create random 16 character one
+# If Admin password not provided, create random 16 character one
 resource "random_string" "admin_password" {
   count   = local.generate_admin_password ? 1 : 0
   length  = 16
   special = false
 }
 
-# If SIC key not provied, create random 8 character one
+# If SIC key not provided, create random 8 character one
 resource "random_string" "sic_key" {
   count   = local.generate_sic_key ? 1 : 0
   length  = 8
@@ -19,27 +19,35 @@ resource "random_string" "sic_key" {
 }
 
 locals {
-  subnet_prefix         = "projects/${var.project_id}/regions/${var.region}/subnetworks"
   cluster_address_names = coalesce(var.address_names, ["primary-cluster-address", "secondary-cluster-address"])
   cluster_member_names  = coalesce(var.member_names, ["member-a", "member-b"])
   cluster_members = { for k, v in local.cluster_member_names : v =>
     {
       name                 = "${local.cluster_name}-${v}"
-      cluster_address_name = "${local.cluster_name}-${local.cluster_address_names[k]}"
-      member_address_name  = "${local.cluster_name}-${local.cluster_member_names[k]}-address"
       zone                 = local.zones[k]
+      member_address_name  = "${local.cluster_name}-${v}-address"
+      cluster_address_name = "${local.cluster_name}-${local.cluster_address_names[k]}"
     }
   }
-  create_member_external_ips = coalesce(var.create_member_external_ips, true)
+  create_cluster_external_ips = coalesce(var.create_cluster_external_ips, true)
+  create_member_external_ips  = coalesce(var.create_member_external_ips, true)
 }
 
 # Create primary and secondary cluster External addresses
 resource "google_compute_address" "cluster_external_ips" {
-  count        = length(local.cluster_address_names)
+  for_each     = local.create_cluster_external_ips ? local.cluster_members : {}
   project      = var.project_id
-  name         = "${local.cluster_name}-${local.cluster_address_names[count.index]}"
+  name         = each.value.cluster_address_name
   region       = var.region
   address_type = "EXTERNAL"
+}
+
+# Get status of the the primary and secondary cluster addresses
+data "google_compute_address" "cluster_external_ips" {
+  for_each = local.cluster_members
+  project  = var.project_id
+  name     = each.value.cluster_address_name
+  region   = var.region
 }
 
 # Create member a/b External addresses for nic1 management, if desired
@@ -72,6 +80,7 @@ locals {
   sic_key               = local.generate_sic_key ? random_string.sic_key[0].result : var.sic_key
   allow_upload_download = coalesce(var.allow_upload_download, false)
   enable_monitoring     = coalesce(var.enable_monitoring, false)
+  subnet_prefix         = "projects/${var.project_id}/regions/${var.region}/subnetworks"
 }
 
 # Create Compute Engine Instances
@@ -91,7 +100,7 @@ resource "google_compute_instance" "cluster_members" {
     initialize_params {
       type  = coalesce(var.disk_type, "pd-ssd")
       size  = coalesce(var.disk_size, 100)
-      image = lookup(local.images, local.software_version, "R81.10")
+      image = local.images[local.software_version]
     }
   }
   # eth0 / nic0
@@ -100,7 +109,7 @@ resource "google_compute_instance" "cluster_members" {
     subnetwork_project = var.project_id
     subnetwork         = "${local.subnet_prefix}/${var.subnet_names[0]}"
     dynamic "access_config" {
-      for_each = var.configured == true ? [true] : []
+      for_each = local.create_cluster_external_ips && data.google_compute_address.cluster_external_ips[each.key].status == "IN_USE" ? [true] : []
       content {
         nat_ip = google_compute_address.cluster_external_ips[each.key].address
       }
@@ -137,19 +146,20 @@ resource "google_compute_instance" "cluster_members" {
   }
   metadata_startup_script = templatefile("${path.module}/${local.startup_script_file}", {
     // script's arguments
-    generatePassword               = "True" # Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
+    generatePassword               = 0 #"True" Setting to 'True' will have the VM pull the password value from adminPasswordSourceMetadata
     config_url                     = "https://runtimeconfig.googleapis.com/v1beta1/projects/${var.project_id}/configs/${local.cluster_name}-config"
     config_path                    = "projects/${var.project_id}/configs/${local.cluster_name}-config"
     sicKey                         = local.sic_key
-    allowUploadDownload            = local.allow_upload_download ? "True" : "False"
+    allowUploadDownload            = 1 #local.allow_upload_download ? "True" : "False"
     templateName                   = "cluster_tf"
     templateVersion                = local.template_version
     templateType                   = "terraform"
     mgmtNIC                        = "Private IP (eth1)"
-    hasInternet                    = "False"
-    enableMonitoring               = local.enable_monitoring ? "True" : "False"
+    hasInternet                    = 1 #"true" "False"
+    enableMonitoring               = 1 #local.enable_monitoring ? "True" : "False"
     shell                          = coalesce(var.admin_shell, "/bin/bash")
-    installationType               = coalesce(var.install_type, "Cluster")
+    installationType               = "Cluster" #coalesce(var.install_type, "Cluster")
+    installSecurityManagement      = 0
     computed_sic_key               = ""
     managementGUIClientNetwork     = coalesce(var.allowed_gui_clients, "0.0.0.0/0")
     primary_cluster_address_name   = "${local.cluster_name}-${local.cluster_address_names[0]}"

@@ -106,6 +106,10 @@ variable "subnet_names" {
   type    = list(string)
   default = null
 }
+variable "create_cluster_external_ips" {
+  type    = bool
+  default = true
+}
 variable "create_member_external_ips" {
   type    = bool
   default = true
@@ -119,10 +123,6 @@ variable "sic_address" {
   default = null
 }
 variable "auto_scale" {
-  type    = bool
-  default = false
-}
-variable "configured" {
   type    = bool
   default = false
 }

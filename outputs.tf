@@ -1,13 +1,9 @@
-output "cluster" {
-  value = {
-    name             = local.cluster_name
-    cluster_address  = google_compute_address.cluster_external_ips[0].address
-    license_type     = local.license_type
-    software_version = local.software_version
-    sic_key          = local.sic_key
-    admin_password   = local.admin_password
-  }
-}
+output "cluster_name" { value = local.cluster_name }
+output "cluster_address" { value = data.google_compute_address.cluster_external_ips[local.cluster_member_names[0]].address }
+output "license_type" { value = local.license_type }
+output "software_version" { value = local.software_version }
+output "sic_key" { value = local.sic_key }
+output "admin_password" { value = local.admin_password }
 output "members" {
   value = { for k, v in local.cluster_members : k =>
     {

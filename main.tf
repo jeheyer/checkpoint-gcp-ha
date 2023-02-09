@@ -1,5 +1,5 @@
 locals {
-  cluster_name            = coalesce(var.name, "ckpt-${var.region}")
+  cluster_name            = coalesce(var.name, substr("ckpt-${var.region}", 0, 16))
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
 }
@@ -167,7 +167,7 @@ resource "google_compute_instance" "cluster_members" {
     primary_cluster_address_name   = "${local.cluster_name}-${local.cluster_address_names[0]}"
     secondary_cluster_address_name = "${local.cluster_name}-${local.cluster_address_names[1]}"
     managementNetwork              = coalesce(var.sic_address, "192.0.2.132/32") # This is designed to create a static route to the mgmt server via eth1
-    expert_password = var.expert_password
+    expert_password                = var.expert_password
 
     /* TODO
     domain_name = 

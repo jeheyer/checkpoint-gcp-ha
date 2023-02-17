@@ -23,8 +23,8 @@ variable "install_type" {
   type    = string
   default = null
   validation {
-    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Standalone" : true
-    error_message = "Install type should be 'Cluster' or 'Standalone'."
+    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Gateway only" : true
+    error_message = "Install type should be 'Cluster' or 'Gateway only'."
   }
 }
 variable "member_names" {

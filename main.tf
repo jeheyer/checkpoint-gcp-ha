@@ -166,7 +166,7 @@ resource "google_compute_instance" "cluster_members" {
     enableMonitoring               = local.enable_monitoring
     shell                          = local.admin_shell
     installationType               = local.install_type
-    installSecurityManagement      = local.install_type == "Cluster" || local.install_type == "Standalone" ? "false" : "true"
+    installSecurityManagement      = local.install_type == "Cluster" || local.install_type == "Gateway only" ? "false" : "true"
     computed_sic_key               = local.sic_key
     managementGUIClientNetwork     = coalesce(var.allowed_gui_clients, "0.0.0.0/0") # Controls access GAIA web interface
     primary_cluster_address_name   = local.install_type == "Cluster" ? "${local.cluster_name}-${local.cluster_address_names[0]}" : ""

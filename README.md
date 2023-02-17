@@ -10,19 +10,23 @@
 
 ### Required Inputs
 
-| Name        | Description                                | Type     |
-|-------------|--------------------------------------------|----------|
-| project\_id | GCP Project ID to create the gateway(s) in | `string` | 
-| region      | GCP Name to create the gateway(s) in       | `string` | 
-| name        | Name of the Cluster                        | `string` |
+| Name        | Description                          | Type     |
+|-------------|--------------------------------------|----------|
+| project\_id | GCP Project ID for all resources     | `string` | 
+| region      | GCP Name to create the gateway(s) in | `string` | 
+| name        | Name of the Cluster                  | `string` |
 
 ### Recommend Inputs
 
-| Name              | Description                                 | Type     | Default   |
-|-------------------|---------------------------------------------|----------|-----------|
-| install\_type     | Installation Type                           | `string` | "Cluster" |
-| license\_type     | License Type.  Options are `BYOL` or `PAYG` | `string` | "BYOL"    |
-| software\_version | Checkpoint Software Version                 | `string` | "R81.10"  |
+| Name              | Description                                 | Type     | Default |
+|-------------------|---------------------------------------------|----------|---------|
+| install\_type     | Installation Type                           | `string` | Cluster |
+| license\_type     | License Type.  Options are `BYOL` or `PAYG` | `string` | BYOL    |
+| software\_version | Checkpoint Software Version                 | `string` | R81.10  |
+
+#### Notes
+
+- Supported Software versions are R80.40, R81.10, and R81.20
 
 ### Optional Inputs
 

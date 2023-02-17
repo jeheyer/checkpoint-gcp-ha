@@ -17,13 +17,15 @@ import socket
 import subprocess
 import time
 import traceback
-import platform
+
+from platform import node
 
 import gcp as _gcp
 
 HIGH_PRIORITY = 1
 LOW_PRIORITY = 2
-CHKP_TAG = platform.node()[0:-8]   # strip off the "member-[a|b]" portion of the hostname
+HOSTNAME = node()
+CHKP_TAG = HOSTNAME[0:-8]   # strip off the "member-[a|b]" portion of the hostname
 TO_MEMBER_A = '-a'
 TO_MEMBER_B = '-b'
 MAX_VPC_NAME_LENGTH = 38
@@ -497,7 +499,8 @@ def is_member_a():
     whether a vm instance is member a according to suffix name
     :return: boolean True if member is A else False
     """
-    if conf[MEMBER.NAME].endswith(MEMBER.MEMBER_A_SUFFIX):
+    #if conf[MEMBER.NAME].endswith(MEMBER.MEMBER_A_SUFFIX):
+    if HOSTNAME.endswith("-a") or HOSTNAME.endwith("-primary") or HOSTNAME.endwith("-1") or HOSTNAME.endswith("01"):
         logger.debug('Operating in member a mode')
         return True
 

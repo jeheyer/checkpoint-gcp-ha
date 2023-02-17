@@ -3,6 +3,7 @@ locals {
   cluster_name            = coalesce(var.name, substr("ckpt-${var.region}", 0, 16))
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
+  network_project_id      = var.project_id
 }
 
 # If Admin password not provided, create random 16 character one
@@ -160,12 +161,12 @@ resource "google_compute_instance" "cluster_members" {
     templateName                   = local.template_name
     templateVersion                = local.template_version
     templateType                   = "terraform"
-    mgmtNIC                        = local.install_type == "Cluster" ? "Private IP (eth1)" : "Private IP (eth0)"
+    mgmtNIC                        = local.install_type == "Cluster" ? "Private IP (eth1)" : "Private IP (eth1)"
     hasInternet                    = "true"
     enableMonitoring               = local.enable_monitoring
     shell                          = local.admin_shell
     installationType               = local.install_type
-    installSecurityManagement      = local.install_type == "Cluster" ? "false" : "true"
+    installSecurityManagement      = local.install_type == "Cluster" || local.install_type == "Standalone" ? "false" : "true"
     computed_sic_key               = local.sic_key
     managementGUIClientNetwork     = coalesce(var.allowed_gui_clients, "0.0.0.0/0") # Controls access GAIA web interface
     primary_cluster_address_name   = local.install_type == "Cluster" ? "${local.cluster_name}-${local.cluster_address_names[0]}" : ""
@@ -182,3 +183,15 @@ resource "google_compute_instance" "cluster_members" {
     */
   })
 }
+
+resource "google_compute_instance_group" "default" {
+  count       = var.create_instance_groups ? length(local.cluster_members) : 0
+  project     = var.project_id
+  name        = google_compute_instance.cluster_members[count.index].name
+  description = "Unmanaged Instance Group for ${local.cluster_members[count.index].name}"
+  network     = "projects/${local.network_project_id}/global/networks/${var.vpc_network_names[0]}"
+  instances   = [google_compute_instance.cluster_members[count.index].self_link]
+  zone        = google_compute_instance.cluster_members[count.index].zone
+}
+
+

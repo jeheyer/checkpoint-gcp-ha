@@ -22,6 +22,10 @@ variable "description" {
 variable "install_type" {
   type    = string
   default = null
+  validation {
+    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Standalone" : true
+    error_message = "Install type should be 'Cluster' or 'Standalone'."
+  }
 }
 variable "member_names" {
   type    = list(string)
@@ -50,10 +54,18 @@ variable "disk_type" {
 variable "disk_size" {
   type    = number
   default = null
+  validation {
+    condition     = var.disk_size != null ? var.disk_size >= 40 && var.disk_size <= 200 : true
+    error_message = "Disk size should be between 40 and 200 GB."
+  }
 }
 variable "admin_password" {
   type    = string
   default = null
+  validation {
+    condition     = var.admin_password != null ? length(var.admin_password) >= 8 && length(var.admin_password) <= 32 : true
+    error_message = "Admin password should be 8 to 32 characters."
+  }
 }
 variable "expert_password" {
   type    = string
@@ -62,6 +74,10 @@ variable "expert_password" {
 variable "sic_key" {
   type    = string
   default = null
+  validation {
+    condition     = var.sic_key != null ? length(var.sic_key) >= 8 && length(var.sic_key) <= 32 : true
+    error_message = "SIC Key should be 8 to 32 characters."
+  }
 }
 variable "allow_upload_download" {
   type    = bool
@@ -74,6 +90,10 @@ variable "enable_monitoring" {
 variable "license_type" {
   type    = string
   default = null
+  validation {
+    condition     = var.license_type != null ? upper(var.license_type) == "PAYG" || upper(var.license_type) == "PAYG" : true
+    error_message = "License type should be 'BYOL' or 'PAYG'."
+  }
 }
 variable "software_version" {
   type    = string
@@ -121,6 +141,10 @@ variable "create_cluster_external_ips" {
 variable "create_member_external_ips" {
   type    = bool
   default = true
+}
+variable "create_instance_groups" {
+  type    = bool
+  default = false
 }
 variable "allowed_gui_clients" {
   type    = string

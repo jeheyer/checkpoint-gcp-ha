@@ -7,6 +7,7 @@ output "software_version" { value = local.software_version }
 output "sic_key" { value = local.sic_key }
 output "admin_password" { value = local.admin_password }
 output "admin_shell" { value = local.admin_shell }
+output "image" { value = local.image }
 output "members" {
   value = { for k, v in local.cluster_members : local.cluster_member_names[k] =>
     {
@@ -16,4 +17,7 @@ output "members" {
       external_ip = local.create_member_external_ips ? google_compute_instance.cluster_members[k].network_interface.1.access_config.0.nat_ip : null
     }
   }
+}
+output "instance_group_ids" {
+  value = google_compute_instance_group.default[*].id
 }

@@ -11,10 +11,9 @@ variable "name" {
   type    = string
   default = null
   validation {
-    condition     = var.name != null ? length(var.name) < 17 : true
+    condition     = var.name != null ? length(var.name) < 23 : true
     error_message = "Cluster name cannot exceed 16 characters."
   }
-}
 }
 variable "description" {
   type    = string

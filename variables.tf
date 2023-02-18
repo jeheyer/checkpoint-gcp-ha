@@ -3,6 +3,11 @@ variable "project_id" {
   type        = string
   default     = null
 }
+variable "network_project_id" {
+  description = "Host Network's Project ID (if using Shared VPC)"
+  type        = string
+  default     = null
+}
 variable "region" {
   description = "Default region name to deploy in"
   type        = string
@@ -23,15 +28,11 @@ variable "install_type" {
   type    = string
   default = null
   validation {
-    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Gateway only" : true
+    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Gateway only" || var.install_type == "Management only" : true
     error_message = "Install type should be 'Cluster' or 'Gateway only'."
   }
 }
-variable "member_names" {
-  type    = list(string)
-  default = null
-}
-variable "address_names" {
+variable "instance_suffixes" {
   type    = list(string)
   default = null
 }
@@ -127,18 +128,27 @@ variable "network_tags" {
   type    = list(string)
   default = null
 }
-variable "vpc_network_names" {
-  type = list(string)
+variable "network_names" {
+  type    = list(string)
+  default = null
+}
+variable "network_name" {
+  type    = string
+  default = "default"
 }
 variable "subnet_names" {
   type    = list(string)
   default = null
 }
-variable "create_cluster_external_ips" {
+variable "subnet_name" {
+  type    = string
+  default = "default"
+}
+variable "create_nic0_external_ips" {
   type    = bool
   default = true
 }
-variable "create_member_external_ips" {
+variable "create_nic1_external_ips" {
   type    = bool
   default = true
 }

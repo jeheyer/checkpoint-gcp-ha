@@ -30,38 +30,42 @@
 
 ### Optional Inputs
 
-| Name                           | Description                                           | Type           | Default                |
-|--------------------------------|-------------------------------------------------------|----------------|------------------------|
-| machine\_type                  | GCP Machine Type for the VMs                          | `string`       | n1-standard-4          |
-| zones                          | Short name of the zones to use in this region         | `list(string)` | ["b","c"]              |
-| admin\_shell                   | Shell for the 'admin' user                            | `string`       | /etc/cli.sh            |
-| admin\_password                | Password for the 'admin' user                         | `string`       | n/a                    |
-| sic\_key                       | Secure Internal Communication passkey                 | `string`       | n/a                    |
-| create\_cluster\_external\_ips | Create External IPs for Cluster                       | `bool`         | true                   |
-| create\_member\_external\_ips  | Create External IPs for Mgmt Interfaces               | `bool`         | true                   |
-| allow_upload_download          | Allow Software updates via Web                        | `bool`         | false                  |
-| enable\_monitoring             | Activate StackDriver Monitoring                       | `bool`         | false                  |
-| network\_tags                  | Network Tags to apply to gateways                     | `list(string)` | ["checkpoint-gateway"] |
-| disk\_type                     | Disk type for gateways                                | `string`       | pd-ssd                 |
-| disk\_size                     | Disk size for gateways (in GB)                        | `number`       | 100                    |
-| disk\_auto\_delete             | Auto delete disk when VM is deleted                   | `bool`         | true                   |
-| description                    | Description for the cluster members                   | `string`       | n/a                    |
+| Name                            | Description                                    | Type           | Default                 |
+|---------------------------------|------------------------------------------------|----------------|-------------------------|
+| instances_suffixes              | Names to use for the end of each instance name | `list(string)` | ["member-a","member-b"] |
+| machine\_type                   | GCP Machine Type for the VMs                   | `string`       | n1-standard-4           |
+| zones                           | Short name of the zones to use in this region  | `list(string)` | ["b","c"]               |
+| admin\_shell                    | Shell for the 'admin' user                     | `string`       | /etc/cli.sh             |
+| admin\_password                 | Password for the 'admin' user                  | `string`       | n/a                     |
+| sic\_key                        | Secure Internal Communication passkey          | `string`       | n/a                     |
+| create\_cluster\_external\_ips  | Create External IPs for Cluster                | `bool`         | true                    |
+| create\_member\_external\_ips   | Create External IPs for Mgmt Interfaces        | `bool`         | true                    |
+| allow_upload_download           | Allow Software updates via Web                 | `bool`         | false                   |
+| enable\_monitoring              | Activate StackDriver Monitoring                | `bool`         | false                   |
+| network\_tags                   | Network Tags to apply to gateways              | `list(string)` | ["checkpoint-gateway"]  |
+| disk\_type                      | Disk type for gateways                         | `string`       | pd-ssd                  |
+| disk\_size                      | Disk size for gateways (in GB)                 | `number`       | 100                     |
+| disk\_auto\_delete              | Auto delete disk when VM is deleted            | `bool`         | true                    |
+| description                     | Description for the instances                  | `string`       | n/a                     |
 
 ### Notes
 
-- default description for Clusters is "CloudGuard Highly Available Security Cluster" 
+- Using custom `instance_suffixes` is not recommend for clusters as it will cause failover issues
+- For Management installs, default network tag is `["checkpoint-management"]`
 
 ## Outputs
 
-| Name              | Description                                     | Type     |
-|-------------------|-------------------------------------------------|----------|
-| cluster\_name     | Name of the Cluster                             | `string` |
-| cluster\_address  | Primary Cluster Address of the Cluster          | `string` |
-| license\_type     | License type that was deployed                  | `string` |
-| software\_version | Software version that was deployed              | `string` |
-| admin\_password   | Admin password for the gateways                 | `string` |
-| sic\_key          | SIC key for the gateways                        | `string` |
-| members           | Information about each Cluster Member (gateway) | `map`    |
+| Name               | Description                                | Type           |
+|--------------------|--------------------------------------------|----------------|
+| name               | General name of the deployment             | `string`       |
+| cluster\_address   | Primary Cluster Address of the Cluster     | `string`       |
+| license\_type      | License type that was deployed             | `string`       |
+| software\_version  | Software version that was deployed         | `string`       |
+| image              | Specific software image used for the disks | `string`       |
+| admin\_password    | Admin password for the gateways            | `string`       |
+| sic\_key           | SIC key for the gateways                   | `string`       |
+| instances          | Information about each specific instance   | `map`          |
+| instance_group_ids | IDs of the instance groups created         | `list(string)` |
 
 ## Sample Inputs
 
@@ -69,42 +73,55 @@
 
 ```
 project_id             = "my-project-id"
+install_type           = "Cluster
+license_type           = "PAYG"
 name                   = "my-cluster"
 region                 = "us-central1"
-license_type           = "PAYG"
+network_names          = ["external", "mgmt", "internal"]
+subnet_names           = ["default", "default", "default"]
+allow_upload_download  = true
+enable_monitoring      = true
 ```
 
-### R81.10 BYOL cluster in us-east4 with custom options
+### R81.10 BYOL standalones, 2 NIC deployment in us-east4 with custom machine type options
 
 ```
 project_id             = "my-project-id"
 name                   = "my-cluster"
 region                 = "us-east4"
+machine_type           = "n2-standard-2"
+instance_suffixes      = ["01", "02"]
 allow_upload_download  = true
 enable_monitoring      = true
 admin_password         = "abcxyz0123456789"
+admin_shell            = "/bin/bash"
 sic_key                = "abcd1234"
+network_names          = ["external","internal"]
+license_type           = "BYOL"
 ```
 
 
-### R81.10 BYOL cluster in us-central1 with custom zone selection and no external IP for mgmt interfaces
+### R81.10 PAYG cluster in us-central1 with custom zone selection and no external IP for mgmt interfaces
 
 ```
-project_id                 = "my-project-id"
-name                       = "my-cluster"
-region                     = "us-central1"
-zones                      = ["c","f"]
-license_type               = "BYOL"
-create_member_external_ips = false
+project_id                = "my-project-id"
+install_type              = "Cluster
+name                      = "my-cluster"
+region                    = "us-central1"
+zones                     = ["c","f"]
+license_type              = "PAYG"
+create_nic1_external_ips  = false
 ```
 
-### R80.40 BYOL cluster in europe-west4 with custom machine type
+### RR81.10 BYOL Management Server in us-east4
 
 ```
 project_id        = "my-project-id"
-name              = "my-cluster"
+install_type      = "Management only"
+name              = "chkp-mgr"
 region            = "us-east4"
-machine_type      = "n2d-custom-4-8192"
-software_version  = "R80.40"
+network_name      = "default"
+subnet_name       = "default"
+machine_type      = "n2d-standard-4"
 ```
 

@@ -1,9 +1,10 @@
 locals {
   install_type            = coalesce(var.install_type, "Cluster")
   is_cluster              = local.install_type == "Cluster" ? true : false
-  is_gateway              = local.is_cluster || length(regexall("Gateway", local.install_type)) > 0 ? true : false
+  is_mig                  = local.install_type == "AutoScale" ? true : false
+  is_gateway              = local.is_cluster || local.is_mig || length(regexall("Gateway", local.install_type)) > 0 ? true : false
+  is_standalone           = local.is_cluster || local.is_mig ? false : true
   is_management           = !local.is_cluster && length(regexall("Management", local.install_type)) > 0 ? true : false
-  install_code            = local.is_management ? "mgr" : "gw"
   name                    = coalesce(var.name, substr("chkp-${local.install_code}-${var.region}", 0, 16))
   generate_admin_password = var.admin_password == null ? true : false
   generate_sic_key        = var.sic_key == null ? true : false
@@ -71,24 +72,27 @@ resource "google_compute_address" "nic1_external_ips" {
 }
 
 locals {
-  service_account_scopes = coalescelist(var.service_account_scopes, [
-    "https://www.googleapis.com/auth/monitoring.write",
-    "https://www.googleapis.com/auth/compute",
-    "https://www.googleapis.com/auth/cloudruntimeconfig"
-  ])
-  software_version = coalesce(var.software_version, "R81.10")
-  template_name    = local.install_type == "Cluster" ? "cluster_tf" : "single_tf"
-  license_type     = lower(coalesce(var.license_type, "BYOL"))
-  image_code       = "gw"
-  image_prefix     = "checkpoint-public/check-point-${lower(replace(local.software_version, ".", ""))}-${local.image_code}"
-  image_type       = local.is_cluster ? "cluster" : "single"
-  template_version = "20230117"
-  images = {
-    "R81.20" = "${local.image_prefix}-${local.license_type}-${local.image_type}-631-991001245-v${local.template_version}"
-    "R81.10" = "${local.image_prefix}-${local.license_type}-${local.image_type}-335-991001234-v${local.template_version}"
-    "R80.40" = "${local.image_prefix}-${local.license_type}-${local.image_type}-294-991001234-v${local.template_version}"
+  service_account_scopes = coalescelist(var.service_account_scopes,
+    concat(["https://www.googleapis.com/auth/monitoring.write"], local.is_gateway ?
+    ["https://www.googleapis.com/auth/compute", "https://www.googleapis.com/auth/cloudruntimeconfig"] : [])
+  )
+  software_version  = coalesce(var.software_version, "R81.10")
+  software_code     = lower(replace(local.software_version, ".", ""))
+  template_name     = local.is_cluster ? "${lower(local.install_type)}_tf" : "single_tf"
+  license_type      = lower(coalesce(var.license_type, "BYOL"))
+  checkpoint_prefix = "projects/checkpoint-public/global/images/check-point-${local.software_code}"
+  image_type        = local.is_gateway ? "-gw" : ""
+  image_prefix      = "${local.checkpoint_prefix}${local.image_type}-${local.license_type}"
+  image_versions = {
+    "R81.20" = "631-${local.is_management ? "991001243-v20230112" : "991001245-v20230117"}"
+    "R81.10" = "335-${local.is_management ? "991001174-v20221110" : "991001234-v20230117"}"
+    "R80.40" = "294-${local.is_management ? "991001174-v20221107" : "991001234-v20230117"}"
   }
-  image                 = local.images[local.software_version]
+  image_version         = lookup(local.image_versions, local.software_version, "error")
+  install_code          = local.is_management ? "" : (local.is_standalone ? "single-" : "${lower(local.install_type)}-")
+  default_image         = "${local.image_prefix}-${local.install_code}${local.image_version}"
+  image                 = coalesce(var.software_image, local.default_image)
+  template_version      = "20230117"
   startup_script_file   = "startup-script.sh"
   admin_password        = local.generate_admin_password ? random_string.admin_password[0].result : var.admin_password
   sic_key               = local.generate_sic_key ? random_string.sic_key[0].result : var.sic_key
@@ -99,10 +103,10 @@ locals {
   network_names         = coalesce(var.network_names, [var.network_name])
   subnet_names          = coalesce(var.subnet_names, [var.subnet_name])
   descriptions = {
-    cluster = "CloudGuard Highly Available Security Cluster"
-    gateway = "Check Point Security Gateway"
+    "Cluster"   = "CloudGuard Highly Available Security Cluster"
+    "AutoScale" = "None"
   }
-  description = coalesce(var.description, local.is_cluster ? local.descriptions["cluster"] : local.descriptions["gateway"])
+  description = coalesce(var.description, lookup(local.descriptions, local.install_type, "Check Point Security Gateway"))
 }
 
 # Create Compute Engine Instances
@@ -170,7 +174,7 @@ resource "google_compute_instance" "default" {
     instanceSSHKey              = var.admin_ssh_key
     adminPasswordSourceMetadata = local.admin_password
   }
-  metadata_startup_script = templatefile("${path.module}/${local.startup_script_file}", {
+  metadata_startup_script = local.is_management ? null : templatefile("${path.module}/${local.startup_script_file}", {
     // script's arguments
     generatePassword               = "true"
     config_url                     = "https://runtimeconfig.googleapis.com/v1beta1/projects/${var.project_id}/configs/${local.name}-config"

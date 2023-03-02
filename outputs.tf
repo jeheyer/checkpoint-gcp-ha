@@ -1,6 +1,9 @@
 output "name" { value = local.name }
-output "cluster_address" { value = local.is_cluster ? google_compute_address.nic0_external_ips[0].address : null }
+output "cluster_address" {
+  value = local.is_cluster && local.create_nic0_external_ips ? google_compute_address.nic0_external_ips[0].address : null
+}
 output "license_type" { value = upper(local.license_type) }
+output "install_type" { value = local.install_type }
 output "software_version" { value = local.software_version }
 output "sic_key" { value = local.sic_key }
 output "admin_password" { value = local.admin_password }
@@ -18,3 +21,10 @@ output "instances" {
   }
 }
 output "instance_group_ids" { value = google_compute_instance_group.default[*].id }
+output "instance_groups" {
+  value = [for ig in google_compute_instance_group.default[*] : {
+    id   = ig.id
+    name = ig.name
+    zone = ig.zone
+  }]
+}

@@ -28,8 +28,8 @@ variable "install_type" {
   type    = string
   default = null
   validation {
-    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Gateway only" || var.install_type == "Management only" : true
-    error_message = "Install type should be 'Cluster' or 'Gateway only'."
+    condition     = var.install_type != null ? var.install_type == "Cluster" || var.install_type == "Gateway only" || var.install_type == "AutoScale" || var.install_type == "Management only" : true
+    error_message = "Install type should be 'Cluster' or 'Gateway only' or 'AutoScale' or 'Management only'."
   }
 }
 variable "instance_suffixes" {
@@ -94,6 +94,14 @@ variable "license_type" {
   validation {
     condition     = var.license_type != null ? upper(var.license_type) == "PAYG" || upper(var.license_type) == "PAYG" : true
     error_message = "License type should be 'BYOL' or 'PAYG'."
+  }
+}
+variable "software_image" {
+  type    = string
+  default = null
+  validation {
+    condition     = var.software_image != null ? startswith(var.software_image, "checkpoint") || startswith(var.software_image, "projects/checkpoint") : true
+    error_message = "Software image should be from Checkpoint."
   }
 }
 variable "software_version" {

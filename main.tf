@@ -86,6 +86,7 @@ locals {
   image_versions = {
     "R81.20" = "631-${local.is_management ? "991001243-v20230112" : "991001245-v20230117"}"
     "R81.10" = "335-${local.is_management ? "991001174-v20221110" : "991001234-v20230117"}"
+    "R81"    = "392-${local.is_management ? "991001174-v20221108" : "991001234-v20230117"}"
     "R80.40" = "294-${local.is_management ? "991001174-v20221107" : "991001234-v20230117"}"
   }
   image_version         = lookup(local.image_versions, local.software_version, "error")
